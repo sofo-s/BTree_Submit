@@ -489,16 +489,16 @@ class BTree {
   // Access Specified Element
   // return a reference to the first value that is mapped to a key equivalent to
   // key. Perform an insertion if such key does not exist.
-  Value& operator[](const Key& key) {}
+  Value operator[](const Key& key) { return at(key);}
   // Overloaded of const []
   // Access Specified Element
   // return a reference to the first value that is mapped to a key equivalent to
   // key. Throw an exception if the key does not exist.
-  const Value& operator[](const Key& key) const {}
+  const Value operator[](const Key& key) const {return at(key);}
   // Access Specified Element
   // return a reference to the first value that is mapped to a key equivalent to
   // key. Throw an exception if the key does not exist
-  Value& at(const Key& key) {
+  Value at(const Key& key) {
   	if(mation->size<=l){
   		node_y aim;
   		fseek(bt,mation->head,0);
@@ -517,7 +517,7 @@ class BTree {
   // Access Specified Element
   // return a reference to the first value that is mapped to a key equivalent to
   // key. Throw an exception if the key does not exist.
-  const Value& at(const Key& key) const {
+  const Value at(const Key& key) const {
 		return at(key);
   }
   // Return a iterator to the beginning

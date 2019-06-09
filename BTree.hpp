@@ -1,5 +1,5 @@
 //
-// Created by 郑文鑫 on 2019-03-09.
+// Created by 閮戞枃閼?on 2019-03-09.
 //
 
 #include "utility.hpp"
@@ -71,25 +71,29 @@ class BTree {
 			bt=fopen("btree","w");
 			fclose(bt);
 			bt=fopen("btree","rb+");
-			fwrite(&mation,sizeof(info),1,bt);
+			fseek(bt,0,0);
+			fwrite(mation,sizeof(info),1,bt);
 		}
-		else fread(&mation,sizeof(info),1,bt);
+		else {
+			fseek(bt,0,0);
+			fread(mation,sizeof(info),1,bt);
+		}
 	}
-	pair<ssize_t,size_t> locate(const Key &key,ssize_t pos){
+	pair<ssize_t,int> locate(const Key &key,ssize_t pos){
 		node find;
 		fseek(bt,pos,0);
 		fread(&find,sizeof(node),1,bt);
-		size_t i;
+		int i;
 		for(i=1;i<find.size&&key>find.key[i];i++);
-		i--;
+		if(find.key[i]!=key) i--;
 		if(find.kid) return locate(key,find.son[i]);
 		else {
 			node_y aim;
 			fseek(bt,find.son[i],0);
 			fread(&aim,sizeof(node_y),1,bt);
-			size_t j;
+			int j;
 			for(j=0;j<aim.size&&key>aim.key[j];j++);
-			pair<ssize_t,size_t> ok(aim.pos,j-1);
+			pair<ssize_t,int> ok(aim.pos,j-1);
 			return ok;
 		}
 	}
@@ -116,12 +120,12 @@ class BTree {
 			fwrite(&newroot,sizeof(node),1,bt);
 			return;
 		} 
-		else{
+		else{/*
 			if(aim.next!=0){
 				fseek(bt,aim.next,0);
 				fread(&pro,sizeof(node_y),1,bt);
 				if(pro.size<l){
-					for(size_t i=pro.size-1;i>=0;i--) {
+					for(int i=pro.size-1;i>=0;i--) {
 					    pro.key[i+1]=pro.key[i];
 					    pro.val[i+1]=pro.val[i];
 					}
@@ -132,7 +136,7 @@ class BTree {
 					node fat;
 					fseek(bt,pro.fa,0);
 					fread(&fat,sizeof(node),1,bt);
-					size_t i;
+					int i;
 					for(i=1;i<fat.size&&fat.key[i]<pro.key[1];i++);
 					if(fat.key[i]==pro.key[1]) fat.key[i]=pro.key[0];
 					else update(fat,pro.key[0],pro.key[1]);
@@ -150,11 +154,11 @@ class BTree {
 				fread(&pro,sizeof(node_y),1,bt);
 				if(pro.size<l){
 					size_t k=(l-pro.size)/2+1;
-					for(size_t i=0;i<k;i++){
+					for(int i=0;i<k;i++){
 						pro.key[pro.size+i]=aim.key[i];
 						pro.val[pro.size+i]=aim.val[i];
 					}
-					for(size_t i=k;i<aim.size;i++) {
+					for(int i=k;i<aim.size;i++) {
 					    aim.key[i-k]=aim.key[i];
 					    aim.val[i-k]=aim.val[i];
 					}
@@ -163,7 +167,7 @@ class BTree {
 					node fat;
 					fseek(bt,aim.fa,0);
 					fread(&fat,sizeof(node),1,bt);
-					size_t i;
+					int i;
 					for(i=1;i<fat.size&&fat.key[i]<pro.key[pro.size-k];i++);
 					if(fat.key[i]==pro.key[pro.size-k]) fat.key[i]=aim.key[0];
 					else update(fat,aim.key[0],pro.key[pro.size-k]);
@@ -175,15 +179,15 @@ class BTree {
 					fwrite(&fat,sizeof(node),1,bt);
 					return;
 				}	
-			}
+			}*/ 
 			crash_leaf1(aim,pro);
 			node fat;
 			fseek(bt,aim.fa,0);
 			fread(&fat,sizeof(node),1,bt);
-			size_t i;
+			int i;
 			for(i=1;i<fat.size&&fat.key[i]<aim.key[0];i++);
 			if(fat.key[i]!=aim.key[0]) i=0; 
-			for(size_t j=fat.size-1;j>i;j--) {
+			for(int j=fat.size-1;j>i;j--) {
 				fat.key[j+1]=fat.key[j];
 				fat.son[j+1]=fat.son[j];
 			}
@@ -210,7 +214,7 @@ class BTree {
 		node fat;
 		fseek(bt,cur.fa,0);
 		fread(&fat,sizeof(node),1,bt);
-		size_t i;
+		int i;
 		for(i=1;i<fat.size&&fat.key[i]<od;i++);
 		if(fat.key[i]==od) fat.key[i]=min;
 		else update(fat,min,od);
@@ -227,6 +231,7 @@ class BTree {
 		aim.size=l/2;
 		pro.size=l-l/2+1;
 		pro.pre=aim.pos;
+		pro.next=aim.next;
 		pro.fa=aim.fa;
 		if(aim.next){
 			node_y n;
@@ -251,10 +256,10 @@ class BTree {
 			mation->end+=sizeof(node);
 			newroot.kid=1;
 			node pro;
-			for(size_t j=m/2;j<=m;j++){
+			for(int j=m/2;j<=m;j++){
 				pro.key[m/2-j]=aim.key[j];
 				pro.son[m/2-j]=aim.son[j];
-			}//key[0]û�� 
+			}//key[0]没用 
 			pro.pos=mation->end;
 			mation->end+=sizeof(node); 
 			aim.size-=m-m/2;
@@ -279,18 +284,18 @@ class BTree {
 		node fat;
 		fseek(bt,aim.fa,0);
 		fread(&fat,sizeof(node),1,bt);
-		size_t i;
+		int i;
 		for(i=1;i<fat.size&&fat.key[i]<min;i++);
 			if(fat.key[i]!=min) i=0;
-			for(size_t j=fat.size-1;j>i;j--){
+			for(int j=fat.size-1;j>i;j--){
 				fat.key[j+1]=fat.key[j];
 				fat.son[j+1]=fat.son[j];
 			}
 			node pro;
-			for(size_t j=m/2;j<=m;j++){
+			for(int j=m/2;j<=m;j++){
 				pro.key[m/2-j]=aim.key[j];
 				pro.son[m/2-j]=aim.son[j];
-			}//key[0]û�� 
+			}//key[0]没用 
 			pro.pos=mation->end;
 			mation->end+=sizeof(node); 
 			aim.size-=m-m/2;
@@ -402,7 +407,6 @@ class BTree {
     // Todo Assignment
   }
   ~BTree() {
-  	clear();
   	if(bt) fclose(bt);
     // Todo Destructor
   }
@@ -426,9 +430,10 @@ class BTree {
 		node_y first;
 		fseek(bt,sizeof(info),0);
 		fread(&first,sizeof(node_y),1,bt);
-		size_t i; 
+		int i; 
 		for(i=0;i<first.size&&first.key[i]<key;i++);
-		for(size_t j=first.size-1;j>=i;j--){
+		if(first.key[i]==key) return pair<iterator,OperationResult>(nothing,Fail);
+		for(int j=first.size-1;j>=i;j--){
 			first.key[j+1]=first.key[j];
 			first.val[j+1]=first.val[j];
 		}
@@ -440,17 +445,29 @@ class BTree {
 		fwrite(&first,sizeof(node_y),1,bt);
 	}  
 	else {
-		pair<ssize_t,size_t> pos=locate(key,mation->root);
+		pair<ssize_t,int> pos=locate(key,mation->root);
 		node_y land;
 		fseek(bt,pos.first,0);
 		fread(&land,sizeof(node_y),1,bt);
-		for(size_t i=land.size-1;i>pos.second;i--){
+		if(land.key[pos.second+1]==key) return pair<iterator,OperationResult>(nothing,Fail);
+		for(int i=land.size-1;i>pos.second;i--){
 			land.key[i+1]=land.key[i];
 			land.val[i+1]=land.val[i];
 		}
 		land.key[pos.second+1]=key;
 		land.val[pos.second+1]=value;
 		land.size++;
+		if(pos.second==-1) {
+			node fat;
+			fseek(bt,land.fa,0);
+			fread(&fat,sizeof(node),1,bt);
+			int i;
+			for(i=1;i<fat.size&&fat.key[i]<land.key[1];i++);
+			if(fat.key[i]==land.key[1]) fat.key[i]=land.key[0];
+			else update(fat,land.key[0],land.key[1]);
+			fseek(bt,fat.pos,0);
+			fwrite(&fat,sizeof(node),1,bt);
+		}
 		if(land.size>l) crash_leaf(land);
 		fseek(bt,land.pos,0);
 		fwrite(&land,sizeof(node_y),1,bt);
@@ -482,11 +499,19 @@ class BTree {
   // return a reference to the first value that is mapped to a key equivalent to
   // key. Throw an exception if the key does not exist
   Value& at(const Key& key) {
+  	if(mation->size<=l){
+  		node_y aim;
+  		fseek(bt,mation->head,0);
+		fread(&aim,sizeof(node_y),1,bt);
+		for(int i=0;i<aim.size;i++){
+			if(aim.key[i]==key) return aim.val[i];
+		}
+	  }
   	pair<ssize_t,size_t> find=locate(key,mation->root);
 	node_y aim;
 	fseek(bt,find.first,0);
 	fread(&aim,sizeof(node_y),1,bt);
-	return aim.val[find.second];
+	return aim.val[find.second+1];
   }
   // Overloaded of const []
   // Access Specified Element
@@ -507,7 +532,7 @@ class BTree {
 	  else return 0; 
   }
   // Return the number of <K,V> pairs
-  size_t size() const {}
+  size_t size() const {return mation->size;}
   // Clear the BTree
   void clear() {
   		mation->size=mation->root=mation->head=mation->tail=0;
